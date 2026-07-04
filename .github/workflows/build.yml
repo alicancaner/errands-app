@@ -1,0 +1,28 @@
+name: Build IPA
+on:
+  push: { branches: [main] }
+  workflow_dispatch: {}
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate project
+        run: xcodegen generate
+      - name: Build (unsigned)
+        run: |
+          xcodebuild -project Errands.xcodeproj -scheme Errands \
+            -configuration Release -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" archive \
+            -archivePath build/Errands.xcarchive
+      - name: Package IPA
+        run: |
+          mkdir -p Payload
+          cp -r build/Errands.xcarchive/Products/Applications/Errands.app Payload/
+          zip -r Errands.ipa Payload
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with: { name: Errands-ipa, path: Errands.ipa }
