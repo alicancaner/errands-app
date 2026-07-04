@@ -16,6 +16,7 @@ targets:
         NSLocationWhenInUseUsageDescription: Errands uses your location to plant a test geofence at your current position.
         NSLocationAlwaysAndWhenInUseUsageDescription: Errands needs Always access so store reminders can fire in the background, even when the app is closed.
         UIBackgroundModes: [location]
+        NSMotionUsageDescription: Errands uses motion activity (walking vs. driving) to time reminders sensibly.
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.alican.errands

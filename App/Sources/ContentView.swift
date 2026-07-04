@@ -11,6 +11,12 @@ struct ContentView: View {
                     NavigationLink("Intent Log") {
                         IntentLogView()
                     }
+                    NavigationLink("Search Probe") {
+                        SearchProbeView()
+                    }
+                    NavigationLink("Motion Probe") {
+                        MotionProbeView()
+                    }
                 } header: {
                     Text("Capability probes")
                 } footer: {
