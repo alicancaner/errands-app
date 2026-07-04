@@ -70,7 +70,7 @@ final class GeofenceProbe: NSObject, ObservableObject {
         for region in manager.monitoredRegions where region.identifier == Self.regionID {
             manager.stopMonitoring(for: region)
         }
-        let region = CLCircularRegion(center: coordinate, radius: 300, identifier: Self.regionID)
+        let region = CLCircularRegion(center: coordinate, radius: 200, identifier: Self.regionID)
         region.notifyOnEntry = true
         region.notifyOnExit = true
         manager.startMonitoring(for: region)
@@ -78,7 +78,7 @@ final class GeofenceProbe: NSObject, ObservableObject {
         let now = Date()
         plantedAt = now
         UserDefaults.standard.set(now, forKey: Self.plantedKey)
-        log(String(format: "Planted 300 m tripwire at %.5f, %.5f", coordinate.latitude, coordinate.longitude))
+        log(String(format: "Planted 200 m tripwire at %.5f, %.5f", coordinate.latitude, coordinate.longitude))
     }
 
     private func fireNotification(title: String, body: String) {
@@ -132,13 +132,13 @@ extension GeofenceProbe: CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
         let stamp = Date().formatted(date: .omitted, time: .standard)
         log("ENTER \(region.identifier)")
-        fireNotification(title: "ENTERED tripwire", body: "Crossed into the 300 m ring at \(stamp)")
+        fireNotification(title: "ENTERED tripwire", body: "Crossed into the 200 m ring at \(stamp)")
     }
 
     func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
         let stamp = Date().formatted(date: .omitted, time: .standard)
         log("EXIT \(region.identifier)")
-        fireNotification(title: "EXITED tripwire", body: "Crossed out of the 300 m ring at \(stamp)")
+        fireNotification(title: "EXITED tripwire", body: "Crossed out of the 200 m ring at \(stamp)")
     }
 
     func locationManager(_ manager: CLLocationManager, monitoringDidFailFor region: CLRegion?, withError error: Error) {

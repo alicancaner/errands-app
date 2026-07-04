@@ -22,14 +22,14 @@ wake our app and deliver a notification when you cross a location boundary,
 
 ## Step 3 — Plant the tripwire at home
 
-1. Stand anywhere at home. In the app, tap **Plant tripwire here (300 m)**.
-2. The event log should show a line like `Planted 300 m tripwire at 39.xxxxx, -108.xxxxx`.
+1. Stand anywhere at home. In the app, tap **Plant tripwire here (200 m)**.
+2. The event log should show a line like `Planted 200 m tripwire at 39.xxxxx, -108.xxxxx`.
 3. Now **close the app completely**: swipe up from the bottom and hold → swipe the Errands card up and away. (Yes, really — the test is whether iOS revives it.)
 
 ## Step 4 — The walk
 
-1. Walk away from home in a straight line, at least **500 m** (about 6–7 minutes of walking). Phone in your pocket is fine — do NOT open the app.
-2. Somewhere past ~300–400 m you should get a notification: **"EXITED tripwire"**.
+1. Walk away from home in a straight line, about **300 m** (roughly 4 minutes of walking). Phone in your pocket is fine — do NOT open the app.
+2. Somewhere past ~200–250 m you should get a notification: **"EXITED tripwire"**.
    - It may lag 1–3 minutes after actually crossing — that's normal for geofencing.
 3. Turn around and walk home.
 4. On the way back you should get: **"ENTERED tripwire"**.
@@ -44,3 +44,5 @@ events with timestamps. Then tell Claude either:
   Location line says on the probe screen.
 
 **Do not worry if it fails** — this probe exists exactly to find that out cheaply.
+(Note: 200 m is on the small side for iOS geofences. If notifications don't arrive,
+we'll retry once with a 300 m ring before concluding anything.)

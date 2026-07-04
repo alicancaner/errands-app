@@ -18,7 +18,7 @@ struct GeofenceProbeView: View {
             }
 
             Section("2. Tripwire") {
-                Button("Plant tripwire here (300 m)") {
+                Button("Plant tripwire here (200 m)") {
                     probe.plantTripwireHere()
                 }
                 if let plantedAt = probe.plantedAt {
