@@ -1,0 +1,21 @@
+# Xcode / Swift
+build/
+DerivedData/
+*.xcodeproj
+*.xcworkspace
+xcuserdata/
+*.ipa
+Payload/
+.build/
+.swiftpm/
+Package.resolved
+
+# XcodeGen output is generated on CI; never commit it
+Errands.xcodeproj/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local tooling config (never public)
+.claude/
