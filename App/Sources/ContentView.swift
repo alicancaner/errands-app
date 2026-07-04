@@ -2,13 +2,20 @@ import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "checklist")
-                .font(.largeTitle)
-            Text("Errands v0.1 — pipeline works")
-                .font(.headline)
+        NavigationStack {
+            List {
+                Section {
+                    NavigationLink("Geofence Probe") {
+                        GeofenceProbeView()
+                    }
+                } header: {
+                    Text("Capability probes")
+                } footer: {
+                    Text("Errands v0.2 — Milestone 1 probes")
+                }
+            }
+            .navigationTitle("Errands")
         }
-        .padding()
     }
 }
 
