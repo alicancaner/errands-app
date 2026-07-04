@@ -13,11 +13,14 @@ Everything here is free. When you're done, the AltStore app should open on your 
      that opens the Microsoft Store — AltServer cannot work with the Store version.
    - Run the installer, accept defaults. You do NOT need to open iTunes or sign in.
 
-2. **Install iCloud for Windows — also from Apple's website, NOT the Microsoft Store.**
-   - Apple's direct (non-Store) iCloud installer is available at:
-     https://secure-appldnld.apple.com/windows/061-91601-20200323-974a39d1-41fc-4761-b571-318b7d9205ed/iCloudSetup.exe
-   - If that link ever stops working, search for "iCloud for Windows traditional installer apple.com".
-   - Run it, accept defaults. You do NOT need to sign in to iCloud.
+2. **Install iCloud for Windows — the standalone version, NOT the Microsoft Store one.**
+   - ✅ Already handled: Claude downloaded `iCloudSetup.exe` (v7.21, the last standalone
+     version Apple made) directly from Apple's server into your **Downloads** folder and
+     verified its digital signature is **Valid — signed by Apple Inc.**
+   - Double-click `iCloudSetup.exe` in Downloads, accept defaults. You do NOT need to
+     open iCloud or sign in to it.
+   - (For the record, the working Apple URL is:
+     https://secure-appldnld.apple.com/windows/061-91601-20200323-974a39d0-41fc-4761-b571-318b7d9205ed/iCloudSetup.exe )
 
 3. **Install AltServer.**
    - Go to https://altstore.io and click the **Windows** download (it's a small zip:
