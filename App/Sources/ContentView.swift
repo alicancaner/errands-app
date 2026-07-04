@@ -8,6 +8,9 @@ struct ContentView: View {
                     NavigationLink("Geofence Probe") {
                         GeofenceProbeView()
                     }
+                    NavigationLink("Intent Log") {
+                        IntentLogView()
+                    }
                 } header: {
                     Text("Capability probes")
                 } footer: {

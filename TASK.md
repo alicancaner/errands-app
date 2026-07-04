@@ -5,8 +5,8 @@ Task log for the Errands app (todo-geo-app). Plan: `docs/plans/2026-07-04-todo-g
 ## Active
 
 - [ ] Milestone 1: Capability probes (Gates D–F)
-  - [x] 2026-07-04 — Task 1.1 code: geofence probe implemented (300 m tripwire, entry/exit notifications, persisted event log)
-  - [ ] GATE D: user walk test pending — instructions in `docs/PROBE-1.1-TEST.md`
+  - [x] 2026-07-04 — Task 1.1: geofence probe (200 m tripwire) — GATE D PASSED (user walked out+back with app swiped away; both EXIT and ENTER notifications received, events in log). Observation: exit detection felt prompt, entry detection noticeably delayed — factor into notification-policy tuning (iOS confirms region entry conservatively).
+  - [ ] Task 1.2: Shortcut → App Intent probe (Gate E) — next
 
 ## Upcoming (from plan)
 - [ ] Milestone 2: Phase 1 product (Gates G–I)
