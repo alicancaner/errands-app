@@ -4,7 +4,9 @@ Task log for the Errands app (todo-geo-app). Plan: `docs/plans/2026-07-04-todo-g
 
 ## Active
 
-- [ ] Milestone 1: Capability probes (Gates D–F) — next: Task 1.1 background geofencing probe
+- [ ] Milestone 1: Capability probes (Gates D–F)
+  - [x] 2026-07-04 — Task 1.1 code: geofence probe implemented (300 m tripwire, entry/exit notifications, persisted event log)
+  - [ ] GATE D: user walk test pending — instructions in `docs/PROBE-1.1-TEST.md`
 
 ## Upcoming (from plan)
 - [ ] Milestone 2: Phase 1 product (Gates G–I)
