@@ -1,0 +1,20 @@
+name: Errands
+options:
+  bundleIdPrefix: com.alican
+  deploymentTarget:
+    iOS: "17.0"
+targets:
+  Errands:
+    type: application
+    platform: iOS
+    sources: [App/Sources]
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: Errands
+        UILaunchScreen: {}
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.alican.errands
+        CODE_SIGNING_ALLOWED: "NO"
+        CODE_SIGN_IDENTITY: ""
