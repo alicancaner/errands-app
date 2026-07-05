@@ -5,7 +5,7 @@ Task log for the Errands app (todo-geo-app). Plan: `docs/plans/2026-07-04-todo-g
 ## Active
 
 - [ ] Milestone 2: Phase 1 product (Gates G–I) — next: Task 2.6 voice flow (then 2.7 diagnostics → Gate G)
-- [ ] 📱 USER: sideload the Task 2.5 build (Errands.ipa in project root) and run the persistence check in docs/TEST-2.4-LIST.md
+- [x] 2026-07-05 — 📱 USER: sideloaded Task 2.5 build and ran docs/TEST-2.4-LIST.md — everything worked correctly (parse, complete/undo/delete, persistence across relaunch).
 
 ## Upcoming (from plan)
 - [ ] 2026-07-11 or later: GATE I becomes checkable (7 days after Gate C — verify AltStore auto-refreshed the app)
