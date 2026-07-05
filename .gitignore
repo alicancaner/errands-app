@@ -20,3 +20,4 @@ Thumbs.db
 # Local tooling config (never public)
 .claude/
 docs/NOTE-FROM-CLAUDE.md
+HANDOFF-PROMPT.md
