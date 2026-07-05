@@ -303,6 +303,116 @@ plan(candidates: [StoreCandidate],   // all resolved branches for all open erran
 
 ---
 
+## Milestone 2.5 — Manual location control (Task 2.8, added 2026-07-05)
+
+*User-requested after the Milestone 2 build. Motivation: the 20 tripwire slots are precious, and only the user knows "I'll never go to THAT branch" or "I'd only ever walk there." Deleting a tripwire by hand can't work — the next replan would resurrect it — so control must be a **persistent per-branch preference that every replan consults**: exclude the branch entirely, or keep it but silence driving/walking reminders selectively (removing a single ring would break the two-ring machinery: the outer ring is also what plants the inner one).*
+
+*Scope notes: preferences are **global per store branch** (keyed by the engine's StoreID `"lat,lon|name"`), not per errand — "never that Walmart" should hold for every future errand. This milestone needs NO Gate G/H evidence (pure logic + UI, testable locally/CI/on-phone); Phase 2 still waits on Gate H.*
+
+### Task 2.8.1: RegionPlanner exclusions (TDD in ErrandKit)
+
+**Files:**
+- Modify: `ErrandKit/Sources/ErrandKit/RegionPlanner.swift`
+- Modify: `ErrandKit/Tests/ErrandKitTests/RegionPlannerTests.swift`
+
+**Contract:** `plan(...)` gains `excluding: Set<StoreID> = []`. Excluded stores never receive regions — even when nearest — and their slots go to the next-best candidates. The default value keeps all existing call sites and tests compiling unchanged.
+
+**Test cases (each: write failing test → `swift test` FAIL → minimal code → `swift test` PASS):**
+- Excluded nearest store absent from plan; next candidates fill the cap instead.
+- Excluding every candidate → empty plan.
+- Excluded store gets no INNER ring either, even when listed in `insideOuterRingOf`.
+
+**Implementation sketch:** filter `candidates` with `!excluding.contains($0.id)` before scoring.
+
+**Commit:** `feat: region planner exclusions`.
+
+### Task 2.8.2: NotificationPolicy reminder modes (TDD in ErrandKit)
+
+**Files:**
+- Modify: `ErrandKit/Sources/ErrandKit/NotificationPolicy.swift`
+- Modify: `ErrandKit/Tests/ErrandKitTests/NotificationPolicyTests.swift`
+
+**Contract:** `decide(...)` gains `remindWhenDriving: Bool = true, remindWhenWalking: Bool = true`. Two new rules AFTER the completed/cooldown checks, BEFORE the ring logic:
+- `isDriving && !remindWhenDriving` → `.suppress`
+- `!isDriving && !remindWhenWalking` → `.suppress` (this also prevents pointless inner-ring planting on outer entry)
+
+**Test cases:**
+- outer + driving + remindWhenDriving=false → suppress
+- outer + walking + remindWhenWalking=false → suppress (NOT plantInner)
+- inner + walking + remindWhenWalking=false → suppress
+- inner + driving with walking-off but driving-on → notifyNow (toggles are independent)
+- (defaults: all 9 existing tests stay green untouched)
+
+**Commit:** `feat: per-location reminder modes in policy`.
+
+### Task 2.8.3: StorePreference model + engine wiring
+
+**Files:**
+- Create: `App/Sources/Model/StorePreference.swift`
+- Modify: `App/Sources/Model/AppDatabase.swift` (schema gains the new model)
+- Modify: `App/Sources/Engine/LocationEngine.swift`
+
+**Model (complete):**
+
+```swift
+import SwiftData
+
+/// The user's standing decision about one store branch, keyed by the
+/// engine's StoreID ("lat,lon|name"). Global — outlives any single errand.
+@Model
+final class StorePreference {
+    var storeKey: String
+    var name: String
+    var excluded: Bool
+    var remindWhenDriving: Bool
+    var remindWhenWalking: Bool
+
+    init(storeKey: String, name: String) {
+        self.storeKey = storeKey
+        self.name = name
+        self.excluded = false
+        self.remindWhenDriving = true
+        self.remindWhenWalking = true
+    }
+}
+```
+
+**Engine wiring (all thin):**
+- `AppDatabase`: `ModelContainer(for: Errand.self, StorePreference.self)`.
+- Expose the key format: make `storeID(for:)` internal (`static func storeKey(for candidate: CachedCandidate) -> StoreID`) so views key preferences identically.
+- `replan`: fetch `StorePreference` where `excluded == true` → `Set<StoreID>` → pass as `excluding:`.
+- `handleEntry`: fetch the preference for the entered storeID (if any) → pass its toggles into `decide(...)`.
+
+**Verification:** `swift test` still green locally; push → CI green.
+**Commit:** `feat: store preferences honored by engine`.
+
+### Task 2.8.4: Per-errand location UI + excluded list
+
+**Files:**
+- Create: `App/Sources/Views/ErrandDetailView.swift`
+- Modify: `App/Sources/Views/ErrandListView.swift` (rows navigate to the detail view)
+- Modify: `App/Sources/Views/DiagnosticsView.swift` (new "Excluded locations" section, with un-exclude)
+
+**ErrandDetailView behavior (complete spec):**
+- Title + store phrases at top; "not resolved yet" placeholder when candidates are empty.
+- Map (`MapCircle`-free; plain `Marker`s) of every matched branch — excluded branches tinted gray, active ones blue.
+- One row per matched branch: name + three toggles — **"Use this location"** (inverse of `excluded`), **"Remind when driving"**, **"Remind when walking"** (the reminder toggles disabled while excluded).
+- Any toggle change: upsert the `StorePreference` for that storeKey, save, then `LocationEngine.shared.requestReplan()` — the change takes effect on the spot.
+
+**Diagnostics addition:** "Excluded locations" section listing all `excluded == true` preferences with an "Include again" button (deletes or flips the pref, then replans). Without this, a branch excluded from a completed (gone) errand could never be brought back.
+
+**Verification:** push → CI green → download .ipa → verify new strings in binary → copy to project root.
+**Commit:** `feat: per-errand location management UI`.
+
+### Task 2.8.5: Hand-off to user
+
+Write `docs/TEST-2.8-LOCATIONS.md` (PROBE style): sideload → open an errand → see its branches on the map → exclude one → watch its rings vanish from the Diagnostics map after "Replan now" → relaunch app → toggles persisted → re-include from Diagnostics.
+
+> ### 🚦 GATE J — Manual location control verified on-phone
+> **Evidence (user confirmation):** an excluded branch's rings disappear and STAY gone across replans; reminder toggles persist across relaunch; re-including restores the rings.
+
+---
+
 ## Milestone 3 — Phase 2: drive-mode look-ahead (plan later, deliberately)
 
 Per DESIGN.md §8, Phase 2 (temporary drive-mode coarse tracking, 5–8 km corridor projection, optional MKDirections road-distance check, "heads-up" notification tier) is **not planned in detail here on purpose**: its parameters (corridor width/length, wake cadence, anti-spam rules) should be tuned with real Phase 1 field data. After GATE H/I pass, write `docs/plans/<date>-phase2-lookahead.md` with the same gate discipline.

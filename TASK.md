@@ -4,7 +4,8 @@ Task log for the Errands app (todo-geo-app). Plan: `docs/plans/2026-07-04-todo-g
 
 ## Active
 
-- [ ] Milestone 2: Phase 1 product — all build tasks done and user-verified; next: GATE G bench test (docs/GATE-G-BENCH.md), then GATE H field week, then GATE I
+- [ ] Milestone 2: Phase 1 product — all build tasks done and user-verified; GATE G bench test (docs/GATE-G-BENCH.md), GATE H field week, GATE I pending whenever user can field-test
+- [ ] Milestone 2.5 (added 2026-07-05): Task 2.8 manual location control — planned in docs/plans/2026-07-04-todo-geo-app.md (Tasks 2.8.1–2.8.5, Gate J)
 - [x] 2026-07-05 — 📱 USER: sideloaded Task 2.5 build and ran docs/TEST-2.4-LIST.md — everything worked correctly (parse, complete/undo/delete, persistence across relaunch).
 
 ## Upcoming (from plan)
