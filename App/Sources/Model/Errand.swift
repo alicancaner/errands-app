@@ -23,6 +23,10 @@ final class Errand {
     var cacheAnchorLat: Double?
     var cacheAnchorLon: Double?
 
+    // When each store branch last notified for this errand, keyed by the
+    // engine's StoreID — drives NotificationPolicy's 2 h cooldown.
+    var notifiedAt: [String: Date]
+
     var createdAt: Date
     var completedAt: Date?
 
@@ -32,6 +36,7 @@ final class Errand {
         self.title = title
         self.storePhrases = storePhrases
         self.candidates = []
+        self.notifiedAt = [:]
         self.createdAt = createdAt
     }
 }

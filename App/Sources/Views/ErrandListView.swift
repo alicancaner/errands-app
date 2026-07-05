@@ -32,6 +32,7 @@ struct ErrandListView: View {
                         .swipeActions(edge: .leading) {
                             Button {
                                 errand.completedAt = .now
+                                LocationEngine.shared.requestReplan()
                             } label: {
                                 Label("Done", systemImage: "checkmark")
                             }
@@ -40,6 +41,7 @@ struct ErrandListView: View {
                         .swipeActions(edge: .trailing) {
                             Button(role: .destructive) {
                                 context.delete(errand)
+                                LocationEngine.shared.requestReplan()
                             } label: {
                                 Label("Delete", systemImage: "trash")
                             }
@@ -55,6 +57,7 @@ struct ErrandListView: View {
                             .swipeActions(edge: .leading) {
                                 Button {
                                     errand.completedAt = nil
+                                    LocationEngine.shared.requestReplan()
                                 } label: {
                                     Label("Undo", systemImage: "arrow.uturn.backward")
                                 }
@@ -76,6 +79,8 @@ struct ErrandListView: View {
         guard let parsed = try? UtteranceParser.parse(draft) else { return }
         context.insert(Errand(title: parsed.title, storePhrases: parsed.storePhrases))
         draft = ""
+        // New errand needs branches resolved and regions replanted.
+        LocationEngine.shared.requestReplan()
     }
 }
 
