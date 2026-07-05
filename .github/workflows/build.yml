@@ -3,6 +3,12 @@ on:
   push: { branches: [main] }
   workflow_dispatch: {}
 jobs:
+  test:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run ErrandKit unit tests
+        run: swift test --package-path ErrandKit
   build:
     runs-on: macos-15
     steps:
