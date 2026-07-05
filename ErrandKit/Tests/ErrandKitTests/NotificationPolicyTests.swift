@@ -9,13 +9,17 @@ final class NotificationPolicyTests: XCTestCase {
         ring: RingKind,
         isDriving: Bool = false,
         errandCompleted: Bool = false,
-        lastNotifiedAt: Date? = nil
+        lastNotifiedAt: Date? = nil,
+        remindWhenDriving: Bool = true,
+        remindWhenWalking: Bool = true
     ) -> NotificationDecision {
         NotificationPolicy.decide(
             ring: ring,
             isDriving: isDriving,
             errandCompleted: errandCompleted,
             lastNotifiedAt: lastNotifiedAt,
+            remindWhenDriving: remindWhenDriving,
+            remindWhenWalking: remindWhenWalking,
             now: now
         )
     }
@@ -70,6 +74,36 @@ final class NotificationPolicyTests: XCTestCase {
         let twoHoursAgo = now.addingTimeInterval(-7_200)
         XCTAssertEqual(
             decide(ring: .outer, isDriving: true, lastNotifiedAt: twoHoursAgo),
+            .notifyNow
+        )
+    }
+
+    // Reminder modes (Task 2.8.2) — per-store toggles from StorePreference
+    func testOuterWhileDrivingWithDrivingRemindersOffSuppresses() {
+        XCTAssertEqual(
+            decide(ring: .outer, isDriving: true, remindWhenDriving: false),
+            .suppress
+        )
+    }
+
+    func testOuterWhileWalkingWithWalkingRemindersOffSuppressesNotPlants() {
+        XCTAssertEqual(
+            decide(ring: .outer, isDriving: false, remindWhenWalking: false),
+            .suppress
+        )
+    }
+
+    func testInnerWhileWalkingWithWalkingRemindersOffSuppresses() {
+        XCTAssertEqual(
+            decide(ring: .inner, isDriving: false, remindWhenWalking: false),
+            .suppress
+        )
+    }
+
+    func testInnerWhileDrivingWithOnlyWalkingOffStillNotifies() {
+        // Toggles are independent: walking-off must not silence driving.
+        XCTAssertEqual(
+            decide(ring: .inner, isDriving: true, remindWhenWalking: false),
             .notifyNow
         )
     }

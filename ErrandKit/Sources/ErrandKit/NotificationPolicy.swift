@@ -26,18 +26,30 @@ public enum NotificationPolicy {
     ///     `false` (Gate F: safe default is "not driving").
     ///   - errandCompleted: whether the errand is already done.
     ///   - lastNotifiedAt: when this store+errand pair last notified, if ever.
+    ///   - remindWhenDriving: per-store user toggle; false silences this
+    ///     store while driving.
+    ///   - remindWhenWalking: per-store user toggle; false silences this
+    ///     store while not driving (also skips pointless inner planting).
     ///   - now: current time (injected for testability).
     public static func decide(
         ring: RingKind,
         isDriving: Bool,
         errandCompleted: Bool,
         lastNotifiedAt: Date?,
+        remindWhenDriving: Bool = true,
+        remindWhenWalking: Bool = true,
         now: Date
     ) -> NotificationDecision {
         if errandCompleted {
             return .suppress
         }
         if let lastNotifiedAt, now.timeIntervalSince(lastNotifiedAt) < cooldown {
+            return .suppress
+        }
+        if isDriving && !remindWhenDriving {
+            return .suppress
+        }
+        if !isDriving && !remindWhenWalking {
             return .suppress
         }
         switch ring {
