@@ -4,7 +4,8 @@ Task log for the Errands app (todo-geo-app). Plan: `docs/plans/2026-07-04-todo-g
 
 ## Active
 
-- [ ] Milestone 2: Phase 1 product (Gates G–I) — next: Task 2.4 data model + list UI
+- [ ] Milestone 2: Phase 1 product (Gates G–I) — next: Task 2.6 voice flow (then 2.7 diagnostics → Gate G)
+- [ ] 📱 USER: sideload the Task 2.5 build (Errands.ipa in project root) and run the persistence check in docs/TEST-2.4-LIST.md
 
 ## Upcoming (from plan)
 - [ ] 2026-07-11 or later: GATE I becomes checkable (7 days after Gate C — verify AltStore auto-refreshed the app)
@@ -21,6 +22,8 @@ Task log for the Errands app (todo-geo-app). Plan: `docs/plans/2026-07-04-todo-g
 - [x] 2026-07-05 — Task 2.0: Swift 6.3.2 toolchain installed on Windows (winget); ErrandKit Foundation-only package created; `swift test` verified locally; CI test job added. Note: fresh terminals needed after install — Claude works around stale env vars by reloading SDKROOT/Path per command.
 - [x] 2026-07-05 — Task 2.1: UtteranceParser (TDD, 8 tests red→green): last from/at clause = store clause, or/and/comma multi-store split, articles preserved, ParseError.empty.
 - [x] 2026-07-05 — Task 2.2: RegionPlanner (TDD, 8 tests red→green): nearest-first, cap 20, two-ring outer 1750 m / inner 250 m, driving direction bias (max 2x distance penalty at 180°), deterministic StoreID tie-break.
+- [x] 2026-07-05 — Task 2.4: SwiftData Errand model (title, storePhrases, candidate cache with expiry+anchor, createdAt/completedAt) + ErrandListView (temp text-field add via UtteranceParser, swipe complete/undo/delete, store tags); probes moved under Diagnostics (wrench icon). ErrandKit linked into the app via XcodeGen local package. CI green (run 28754412866). On-phone persistence check pending user sideload.
+- [x] 2026-07-05 — Task 2.5: LocationEngine + StoreResolver: significant-location-change wake → refresh stale caches (CandidateCachePolicy in ErrandKit, TDD, 9 new tests: 24 h expiry, 10 km re-anchor) → RegionPlanner → region diff; didEnterRegion → motion snapshot → NotificationPolicy → notify/plant-inner/suppress; outer-ring exits and errand changes trigger replans; persisted engine event log for Diagnostics. CI green (run 28754673297); .ipa verified to contain engine code, copied to project root.
 - [x] 2026-07-05 — Task 2.3: NotificationPolicy (TDD, 9 tests red→green): completed errand → suppress everywhere; <2 h cooldown → suppress (incl. inner planting — its entry would be suppressed anyway); exactly 2 h → allowed again; inner ring → notify; outer ring → notify when driving, plantInner otherwise (none/unknown motion maps to not-driving per Gate F).
 - [x] 2026-07-05 — Task 1.3: search + motion probes — GATE F PASSED. Search: "walmart" → correct nearby branches; "persian" → true category matches (Shamshiri, Bahar bakery, Persian grill — names without "persian" in them), BUT "persian market" does NOT find Arya Market (Apple POI lacks a Persian category tag for it) → real app must search by the store NAME the user says (strong path), not category descriptors (weak path). Motion: sustained walking detected within 10–20 m and visible in coprocessor history query; hand-held idle = "(none)" with high confidence (expected); treat none/unknown as "not driving". MILESTONE 1 COMPLETE; tagged v0.2-probes.
 
