@@ -253,6 +253,36 @@ final class LocationEngine: NSObject, ObservableObject {
     }
 }
 
+// MARK: - Diagnostics support
+
+/// A currently monitored errand region, parsed for display.
+struct MonitoredRegionInfo: Identifiable {
+    let id: String
+    let storeName: String
+    let center: CLLocationCoordinate2D
+    let radius: Double
+    let ring: RingKind
+}
+
+extension LocationEngine {
+    /// Snapshot of the errand regions iOS is watching right now.
+    func plantedRegions() -> [MonitoredRegionInfo] {
+        manager.monitoredRegions.compactMap { region in
+            guard let circular = region as? CLCircularRegion,
+                  let (ring, storeID) = Self.parseIdentifier(region.identifier)
+            else { return nil }
+            return MonitoredRegionInfo(
+                id: region.identifier,
+                storeName: Self.displayName(of: storeID),
+                center: circular.center,
+                radius: circular.radius,
+                ring: ring
+            )
+        }
+        .sorted { $0.id < $1.id }
+    }
+}
+
 // MARK: - CLLocationManagerDelegate
 
 extension LocationEngine: CLLocationManagerDelegate {
