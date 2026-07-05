@@ -105,6 +105,48 @@ final class RegionPlannerTests: XCTestCase {
         XCTAssertEqual(plan.count, 20)
     }
 
+    // Exclusions (Task 2.8.1)
+    func testExcludedNearestStoreAbsentAndSlotGoesToNextCandidate() {
+        let candidates = [
+            store("near", latMeters: 1_000),
+            store("mid", latMeters: 3_000),
+            store("far", latMeters: 5_000),
+        ]
+        let plan = RegionPlanner.plan(
+            candidates: candidates, position: origin,
+            heading: nil, isDriving: false,
+            insideOuterRingOf: [], excluding: ["near"], cap: 2
+        )
+        XCTAssertEqual(plan.map(\.storeID), ["mid", "far"])
+    }
+
+    func testExcludingEveryCandidateGivesEmptyPlan() {
+        let candidates = [
+            store("a", latMeters: 1_000),
+            store("b", latMeters: 2_000),
+        ]
+        let plan = RegionPlanner.plan(
+            candidates: candidates, position: origin,
+            heading: nil, isDriving: false,
+            insideOuterRingOf: [], excluding: ["a", "b"], cap: 20
+        )
+        XCTAssertTrue(plan.isEmpty)
+    }
+
+    func testExcludedStoreGetsNoInnerRingEvenWhenInsideItsOuterRing() {
+        let candidates = [
+            store("excluded", latMeters: 1_000),
+            store("kept", latMeters: 2_000),
+        ]
+        let plan = RegionPlanner.plan(
+            candidates: candidates, position: origin,
+            heading: nil, isDriving: false,
+            insideOuterRingOf: ["excluded"], excluding: ["excluded"], cap: 20
+        )
+        XCTAssertFalse(plan.contains { $0.storeID == "excluded" })
+        XCTAssertEqual(plan.map(\.storeID), ["kept"])
+    }
+
     func testStableOrderingForEqualScores() {
         // Two stores at identical distance: tie broken by StoreID.
         let candidates = [

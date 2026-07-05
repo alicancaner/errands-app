@@ -49,6 +49,8 @@ public enum RegionPlanner {
     ///   - heading: course over ground in degrees (0 = north), if known.
     ///   - isDriving: whether motion says we're in a vehicle.
     ///   - insideOuterRingOf: stores whose outer ring we're currently inside.
+    ///   - excluding: user-excluded stores; never receive any region, their
+    ///     slots go to the next-best candidates.
     ///   - cap: iOS region-monitoring limit (20).
     /// - Returns: regions to monitor; inner rings count against the cap.
     public static func plan(
@@ -57,12 +59,14 @@ public enum RegionPlanner {
         heading: Double?,
         isDriving: Bool,
         insideOuterRingOf: Set<StoreID>,
+        excluding: Set<StoreID> = [],
         cap: Int = 20
     ) -> [PlannedRegion] {
         // Score = distance, penalized by angular deviation from heading when
         // driving. Multiplicative penalty (max 2x at 180°) deprioritizes
         // stores behind us without ever excluding them.
-        let scored = candidates.map { candidate -> (score: Double, candidate: StoreCandidate) in
+        let allowed = candidates.filter { !excluding.contains($0.id) }
+        let scored = allowed.map { candidate -> (score: Double, candidate: StoreCandidate) in
             let distance = Geo.distanceMeters(from: position, to: candidate.point)
             var score = distance
             if isDriving, let heading {
