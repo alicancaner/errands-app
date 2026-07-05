@@ -270,9 +270,11 @@ final class LocationEngine: NSObject, ObservableObject {
 
 // MARK: - Diagnostics support
 
-/// A currently monitored errand region, parsed for display.
+/// A currently monitored errand region, parsed for display. Carries its
+/// storeKey so Diagnostics can exclude the branch straight from a region row.
 struct MonitoredRegionInfo: Identifiable {
     let id: String
+    let storeKey: StoreID
     let storeName: String
     let center: CLLocationCoordinate2D
     let radius: Double
@@ -288,6 +290,7 @@ extension LocationEngine {
             else { return nil }
             return MonitoredRegionInfo(
                 id: region.identifier,
+                storeKey: storeID,
                 storeName: Self.displayName(of: storeID),
                 center: circular.center,
                 radius: circular.radius,

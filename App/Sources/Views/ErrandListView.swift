@@ -28,7 +28,11 @@ struct ErrandListView: View {
                         .foregroundStyle(.secondary)
                 }
                 ForEach(open) { errand in
-                    ErrandRow(errand: errand)
+                    NavigationLink {
+                        ErrandDetailView(errand: errand)
+                    } label: {
+                        ErrandRow(errand: errand)
+                    }
                         .swipeActions(edge: .leading) {
                             Button {
                                 errand.completedAt = .now
@@ -52,7 +56,11 @@ struct ErrandListView: View {
             if !done.isEmpty {
                 Section("Done") {
                     ForEach(done) { errand in
-                        ErrandRow(errand: errand)
+                        NavigationLink {
+                            ErrandDetailView(errand: errand)
+                        } label: {
+                            ErrandRow(errand: errand)
+                        }
                             .foregroundStyle(.secondary)
                             .swipeActions(edge: .leading) {
                                 Button {

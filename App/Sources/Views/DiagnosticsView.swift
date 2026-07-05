@@ -10,8 +10,10 @@ import UserNotifications
 /// which tripwires are planted, what the engine did and why, permission
 /// states, cache freshness, and every raw dictated utterance.
 struct DiagnosticsView: View {
+    @Environment(\.modelContext) private var context
     @ObservedObject private var engine = LocationEngine.shared
     @Query(sort: \Errand.createdAt, order: .reverse) private var errands: [Errand]
+    @Query(sort: \StorePreference.name) private var preferences: [StorePreference]
     @State private var locationStatus = "checking…"
     @State private var notificationStatus = "checking…"
     @State private var motionStatus = "checking…"
@@ -22,6 +24,7 @@ struct DiagnosticsView: View {
         List {
             mapSection
             regionsSection
+            excludedSection
             permissionsSection
             cachesSection
             eventsSection
@@ -74,7 +77,42 @@ struct DiagnosticsView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+                .contextMenu {
+                    // The natural moment to exclude is spotting a useless
+                    // ring here ("that branch is 26 km away").
+                    Button(role: .destructive) {
+                        exclude(storeKey: info.storeKey, name: info.storeName)
+                    } label: {
+                        Label("Exclude this location", systemImage: "nosign")
+                    }
+                }
             }
+        }
+    }
+
+    private var excludedSection: some View {
+        Section {
+            let excluded = preferences.filter(\.excluded)
+            if excluded.isEmpty {
+                Text("No excluded locations")
+                    .foregroundStyle(.secondary)
+            }
+            ForEach(excluded) { pref in
+                HStack {
+                    Text(pref.name)
+                    Spacer()
+                    Button("Include again") {
+                        pref.excluded = false
+                        try? context.save()
+                        engine.requestReplan()
+                    }
+                    .buttonStyle(.bordered)
+                }
+            }
+        } header: {
+            Text("Excluded locations")
+        } footer: {
+            Text("Excluded branches never get tripwires, for any errand, until you include them again.")
         }
     }
 
@@ -144,6 +182,13 @@ struct DiagnosticsView: View {
     }
 
     // MARK: - Helpers
+
+    private func exclude(storeKey: String, name: String) {
+        let pref = StorePreference.upsert(storeKey: storeKey, name: name, in: context)
+        pref.excluded = true
+        try? context.save()
+        engine.requestReplan()
+    }
 
     private func color(for ring: RingKind) -> Color {
         ring == .outer ? .blue : .orange

@@ -18,3 +18,20 @@ final class StorePreference {
         self.remindWhenWalking = true
     }
 }
+
+extension StorePreference {
+    /// Fetches the preference row for `storeKey`, creating it on first use —
+    /// every view that flips a toggle goes through here so a branch never
+    /// gets two preference rows.
+    static func upsert(storeKey: String, name: String, in context: ModelContext) -> StorePreference {
+        let descriptor = FetchDescriptor<StorePreference>(
+            predicate: #Predicate { $0.storeKey == storeKey }
+        )
+        if let existing = (try? context.fetch(descriptor))?.first {
+            return existing
+        }
+        let created = StorePreference(storeKey: storeKey, name: name)
+        context.insert(created)
+        return created
+    }
+}
