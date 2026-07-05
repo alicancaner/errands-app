@@ -1,3 +1,4 @@
+import Foundation
 import SwiftData
 
 /// The user's standing decision about one store branch, keyed by the
