@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 
 @main
@@ -10,5 +11,6 @@ struct ErrandsApp: App {
         WindowGroup {
             ContentView()
         }
+        .modelContainer(for: Errand.self)
     }
 }
