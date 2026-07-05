@@ -397,9 +397,12 @@ final class StorePreference {
 - Title + store phrases at top; "not resolved yet" placeholder when candidates are empty.
 - Map (`MapCircle`-free; plain `Marker`s) of every matched branch — excluded branches tinted gray, active ones blue.
 - One row per matched branch: name + three toggles — **"Use this location"** (inverse of `excluded`), **"Remind when driving"**, **"Remind when walking"** (the reminder toggles disabled while excluded).
+- Quick action (user request 2026-07-05): swipe / long-press on a branch row → **"Exclude this location"** — one gesture instead of opening toggles.
 - Any toggle change: upsert the `StorePreference` for that storeKey, save, then `LocationEngine.shared.requestReplan()` — the change takes effect on the spot.
 
-**Diagnostics addition:** "Excluded locations" section listing all `excluded == true` preferences with an "Include again" button (deletes or flips the pref, then replans). Without this, a branch excluded from a completed (gone) errand could never be brought back.
+**Diagnostics additions:**
+- "Excluded locations" section listing all `excluded == true` preferences with an "Include again" button (flips the pref, then replans). Without this, a branch excluded from a completed (gone) errand could never be brought back.
+- Quick action on the planted-regions list rows: long-press → **"Exclude this location"** — the natural moment is spotting a useless ring on the map ("that branch is 26 km away"). Requires `MonitoredRegionInfo` to carry its `storeKey`.
 
 **Verification:** push → CI green → download .ipa → verify new strings in binary → copy to project root.
 **Commit:** `feat: per-errand location management UI`.
