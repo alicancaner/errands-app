@@ -5,7 +5,7 @@ Task log for the Errands app (todo-geo-app). Plan: `docs/plans/2026-07-04-todo-g
 ## Active
 
 - [ ] Milestone 2: Phase 1 product — all build tasks done and user-verified; GATE G bench test (docs/GATE-G-BENCH.md), GATE H field week, GATE I pending whenever user can field-test
-- [ ] Milestone 2.5 (added 2026-07-05): Task 2.8 manual location control — planned in docs/plans/2026-07-04-todo-geo-app.md (Tasks 2.8.1–2.8.5, Gate J)
+- [ ] Milestone 2.5 (added 2026-07-05): Task 2.8 manual location control — BUILD DONE 2026-07-05 (Tasks 2.8.1–2.8.5); 📱 USER: run docs/TEST-2.8-LOCATIONS.md → GATE J (excluded rings stay gone across replans; toggles survive relaunch; re-include restores rings)
 - [x] 2026-07-05 — 📱 USER: sideloaded Task 2.5 build and ran docs/TEST-2.4-LIST.md — everything worked correctly (parse, complete/undo/delete, persistence across relaunch).
 
 ## Upcoming (from plan)
@@ -13,6 +13,11 @@ Task log for the Errands app (todo-geo-app). Plan: `docs/plans/2026-07-04-todo-g
 
 ## Completed
 
+- [x] 2026-07-05 — Task 2.8.1: RegionPlanner `excluding:` param (TDD, 3 tests red→green): excluded stores never planted (outer OR inner), slots go to next-best; default arg keeps all call sites compiling.
+- [x] 2026-07-05 — Task 2.8.2: NotificationPolicy `remindWhenDriving`/`remindWhenWalking` params (TDD, 4 tests red→green): per-mode suppress after completed/cooldown checks, before ring logic; walking-off also skips inner planting; toggles independent. ErrandKit suite now 45 tests.
+- [x] 2026-07-05 — Task 2.8.3: StorePreference @Model (storeKey "lat,lon|name", global per branch) in shared container; LocationEngine.storeKey(for:) made internal; replan passes excluded set to planner; handleEntry passes the branch's toggles to policy. CI green (run 28758512073).
+- [x] 2026-07-05 — Task 2.8.4: ErrandDetailView (branch map gray/blue, per-branch Use/driving/walking toggles, swipe+long-press quick exclude, upsert→save→replan on every change); errand rows navigate to it; Diagnostics gains "Excluded locations" section with Include again + long-press exclude on region rows (MonitoredRegionInfo carries storeKey). Fix en route: StorePreference needed `import Foundation` for #Predicate. CI green (run 28758732069); .ipa strings verified ("Exclude this location", "Excluded locations", ErrandDetailView; note: "Include again" is a ≤15-byte Swift small string — packed in registers, invisible to string search, expected), copied to project root.
+- [x] 2026-07-05 — Task 2.8.5: docs/TEST-2.8-LOCATIONS.md written (Gate J script: exclude → rings vanish and stay gone across replans → relaunch persistence → re-include from Diagnostics).
 - [x] 2026-07-04 — Task 0.1: Repo scaffolding; public repo https://github.com/alicancaner/errands-app
 - [x] 2026-07-04 — Task 0.2: Hello World app skeleton (XcodeGen, SwiftUI)
 - [x] 2026-07-04 — Task 0.3: CI workflow producing unsigned .ipa — GATE A PASSED (run 28714178715, green; .ipa verified: Payload/Errands.app, bundle id com.alican.errands)
