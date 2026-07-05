@@ -4,13 +4,9 @@ Task log for the Errands app (todo-geo-app). Plan: `docs/plans/2026-07-04-todo-g
 
 ## Active
 
-- [ ] Milestone 1: Capability probes (Gates D–F)
-  - [x] 2026-07-04 — Task 1.1: geofence probe (200 m tripwire) — GATE D PASSED (user walked out+back with app swiped away; both EXIT and ENTER notifications received, events in log). Observation: exit detection felt prompt, entry detection noticeably delayed — factor into notification-policy tuning (iOS confirms region entry conservatively).
-  - [x] 2026-07-04 — Task 1.2: Add Text intent probe — GATE E PASSED (dictated text landed in Intent Log via Back Tap double-tap AND via "Hey Siri, Errand"; app never opened during capture)
-  - [ ] Task 1.3: MKLocalSearch + motion probe (Gate F) — next
+- [ ] Milestone 2: Phase 1 product (Gates G–I) — next: Task 2.0 Swift toolchain on Windows
 
 ## Upcoming (from plan)
-- [ ] Milestone 2: Phase 1 product (Gates G–I)
 - [ ] 2026-07-11 or later: GATE I becomes checkable (7 days after Gate C — verify AltStore auto-refreshed the app)
 
 ## Completed
@@ -20,6 +16,9 @@ Task log for the Errands app (todo-geo-app). Plan: `docs/plans/2026-07-04-todo-g
 - [x] 2026-07-04 — Task 0.3: CI workflow producing unsigned .ipa — GATE A PASSED (run 28714178715, green; .ipa verified: Payload/Errands.app, bundle id com.alican.errands)
 - [x] 2026-07-04 — Task 0.4: AltServer + AltStore setup — GATE B PASSED (user confirms AltStore main screen, "expires in 7 days"). Root-caused -22411: stale anisette machine identity; fixed via iTunes sign-in after renaming incompatible iTunes Library.itl left by a previous newer iTunes.
 - [x] 2026-07-04 — Task 0.5: Sideload Hello World — GATE C PASSED (user confirms "Errands v0.1 — pipeline works" on iPhone). MILESTONE 0 COMPLETE; tagged v0.1-pipeline. Gate I checkable from 2026-07-11. Windows sideload path: Shift-click AltServer tray icon → "Sideload .ipa".
+- [x] 2026-07-04 — Task 1.1: geofence probe (200 m tripwire) — GATE D PASSED (user walked out+back with app swiped away; both EXIT and ENTER notifications received, events in log). Observation: exit detection prompt, entry detection noticeably delayed — factor into notification-policy tuning.
+- [x] 2026-07-04 — Task 1.2: Add Text intent probe — GATE E PASSED (dictated text landed in Intent Log via Back Tap double-tap AND via "Hey Siri, Errand"; app never opened during capture).
+- [x] 2026-07-05 — Task 1.3: search + motion probes — GATE F PASSED. Search: "walmart" → correct nearby branches; "persian" → true category matches (Shamshiri, Bahar bakery, Persian grill — names without "persian" in them), BUT "persian market" does NOT find Arya Market (Apple POI lacks a Persian category tag for it) → real app must search by the store NAME the user says (strong path), not category descriptors (weak path). Motion: sustained walking detected within 10–20 m and visible in coprocessor history query; hand-held idle = "(none)" with high confidence (expected); treat none/unknown as "not driving". MILESTONE 1 COMPLETE; tagged v0.2-probes.
 
 ## Discovered During Work (Milestone 0)
 
