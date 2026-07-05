@@ -8,6 +8,7 @@ final class MotionProbe: ObservableObject {
     @Published private(set) var confidence = "—"
     @Published private(set) var permission = "unknown"
     @Published private(set) var isRunning = false
+    @Published private(set) var history: [String] = []
 
     private let manager = CMMotionActivityManager()
 
@@ -32,6 +33,36 @@ final class MotionProbe: ObservableObject {
         isRunning = false
         state = "stopped"
         confidence = "—"
+    }
+
+    /// The motion coprocessor records activity ~24/7 regardless of apps;
+    /// query the last hour so a walk can be reviewed after the fact.
+    func queryLastHour() {
+        guard CMMotionActivityManager.isActivityAvailable() else { return }
+        history = ["querying…"]
+        let now = Date()
+        manager.queryActivityStarting(from: now.addingTimeInterval(-3600), to: now, to: .main) { [weak self] activities, error in
+            guard let self else { return }
+            self.updatePermissionText()
+            if let error {
+                self.history = ["query failed: \(error.localizedDescription)"]
+                return
+            }
+            guard let activities, !activities.isEmpty else {
+                self.history = ["no recorded activity in the last hour"]
+                return
+            }
+            let formatter = Date.FormatStyle(date: .omitted, time: .standard)
+            var lines: [String] = []
+            var lastLabel = ""
+            for activity in activities {
+                let label = Self.describe(activity)
+                guard label != lastLabel else { continue }  // collapse repeats
+                lastLabel = label
+                lines.append("\(activity.startDate.formatted(formatter))  \(label) (\(Self.describe(activity.confidence)))")
+            }
+            self.history = lines.suffix(50).reversed()
+        }
     }
 
     private func updatePermissionText() {
@@ -79,6 +110,19 @@ struct MotionProbeView: View {
             Section("Live state") {
                 LabeledContent("Activity", value: probe.state)
                 LabeledContent("Confidence", value: probe.confidence)
+            }
+            Section {
+                Button("Show last hour's history") {
+                    probe.queryLastHour()
+                }
+                ForEach(Array(probe.history.enumerated()), id: \.offset) { _, line in
+                    Text(line)
+                        .font(.caption.monospaced())
+                }
+            } header: {
+                Text("Recorded history (newest first)")
+            } footer: {
+                Text("The phone records this even while the app is closed — walk first, check afterwards.")
             }
         }
         .navigationTitle("Motion Probe")
