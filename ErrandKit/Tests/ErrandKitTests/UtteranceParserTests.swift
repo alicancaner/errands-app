@@ -47,6 +47,25 @@ final class UtteranceParserTests: XCTestCase {
         XCTAssertEqual(parsed.storePhrases, ["target"])
     }
 
+    // Store-clause splitting exposed for the "Where from?" follow-up answer
+    func testStoreClauseSplitsOnOr() {
+        XCTAssertEqual(
+            UtteranceParser.storePhrases(fromClause: "walmart or city market"),
+            ["walmart", "city market"]
+        )
+    }
+
+    func testStoreClauseSplitsOnCommasAndAnd() {
+        XCTAssertEqual(
+            UtteranceParser.storePhrases(fromClause: "walmart, city market and aria"),
+            ["walmart", "city market", "aria"]
+        )
+    }
+
+    func testWhitespaceStoreClauseGivesNoPhrases() {
+        XCTAssertEqual(UtteranceParser.storePhrases(fromClause: "   "), [String]())
+    }
+
     // Failure case
     func testEmptyUtteranceThrows() {
         XCTAssertThrowsError(try UtteranceParser.parse("   ")) { error in

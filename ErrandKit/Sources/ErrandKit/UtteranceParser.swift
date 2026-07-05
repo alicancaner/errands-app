@@ -48,12 +48,15 @@ public enum UtteranceParser {
         }
 
         let title = trimmed[..<r.lowerBound].trimmingCharacters(in: .whitespaces)
-        let stores = splitStores(String(trimmed[r.upperBound...]))
+        let stores = storePhrases(fromClause: String(trimmed[r.upperBound...]))
         return ParsedErrand(title: title, storePhrases: stores)
     }
 
     /// Splits a store clause on commas / "or" / "and" into trimmed phrases.
-    private static func splitStores(_ clause: String) -> [String] {
+    ///
+    /// Public so the "Where from?" follow-up answer ("walmart or city
+    /// market") can be split the same way as an inline store clause.
+    public static func storePhrases(fromClause clause: String) -> [String] {
         clause
             .components(separatedBy: ",")
             .flatMap { $0.components(separatedBy: " or ") }
