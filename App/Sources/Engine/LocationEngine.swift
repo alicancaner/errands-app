@@ -71,7 +71,7 @@ final class LocationEngine: NSObject, ObservableObject {
         var byID: [StoreID: StoreCandidate] = [:]
         for errand in open {
             for candidate in errand.candidates {
-                let id = Self.storeID(for: candidate)
+                let id = Self.storeKey(for: candidate)
                 byID[id] = StoreCandidate(
                     id: id, point: GeoPoint(lat: candidate.lat, lon: candidate.lon)
                 )
@@ -82,15 +82,22 @@ final class LocationEngine: NSObject, ObservableObject {
             .filter { $0.point.distanceMeters(to: position) < RegionPlanner.outerRadius }
             .map(\.id))
 
+        // Standing user exclusions: never plant rings on these branches.
+        let excludedPrefs = (try? context.fetch(
+            FetchDescriptor<StorePreference>(predicate: #Predicate { $0.excluded })
+        )) ?? []
+        let excluded = Set(excludedPrefs.map(\.storeKey))
+
         let plan = RegionPlanner.plan(
             candidates: candidates,
             position: position,
             heading: location.course >= 0 ? location.course : nil,
             isDriving: await isDrivingNow(),
-            insideOuterRingOf: insideOuter
+            insideOuterRingOf: insideOuter,
+            excluding: excluded
         )
         apply(plan)
-        log("Planned \(plan.count) regions from \(candidates.count) branches (\(open.count) open errands)")
+        log("Planned \(plan.count) regions from \(candidates.count) branches (\(open.count) open errands, \(excluded.count) excluded)")
     }
 
     @MainActor
@@ -160,13 +167,20 @@ final class LocationEngine: NSObject, ObservableObject {
             FetchDescriptor<Errand>(predicate: #Predicate { $0.completedAt == nil })
         ) else { return }
 
+        // The user's standing toggles for this branch, if any were ever set.
+        let preference = (try? context.fetch(
+            FetchDescriptor<StorePreference>(predicate: #Predicate { $0.storeKey == storeID })
+        ))?.first
+
         var needsReplan = false
-        for errand in open where errand.candidates.contains(where: { Self.storeID(for: $0) == storeID }) {
+        for errand in open where errand.candidates.contains(where: { Self.storeKey(for: $0) == storeID }) {
             let decision = NotificationPolicy.decide(
                 ring: ring,
                 isDriving: isDriving,
                 errandCompleted: errand.isCompleted,
                 lastNotifiedAt: errand.notifiedAt[storeID],
+                remindWhenDriving: preference?.remindWhenDriving ?? true,
+                remindWhenWalking: preference?.remindWhenWalking ?? true,
                 now: .now
             )
             switch decision {
@@ -219,7 +233,8 @@ final class LocationEngine: NSObject, ObservableObject {
 
     /// StoreID = "lat,lon|name" — stable across replans, and carries the
     /// display name so entry events can name the store without a lookup.
-    private static func storeID(for candidate: CachedCandidate) -> StoreID {
+    /// Internal so views key `StorePreference` records identically.
+    static func storeKey(for candidate: CachedCandidate) -> StoreID {
         String(format: "%.5f,%.5f|%@", candidate.lat, candidate.lon, candidate.name)
     }
 
