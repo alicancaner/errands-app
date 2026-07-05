@@ -29,3 +29,5 @@ Task log for the Errands app (todo-geo-app). Plan: `docs/plans/2026-07-04-todo-g
 - Legacy standalone iCloud installer (v7.18/7.21) verified working URL recorded in docs/SETUP-ALTSTORE.md; Apple no longer links it publicly.
 
 ## Discovered During Work
+
+- [ ] Task 2.6/2.7: log every raw dictated utterance verbatim (on-device only, visible in Diagnostics) so Gate H field week yields the user's REAL sentence shapes; extend UtteranceParser with a test per misparsed shape. Reason: parser currently handles ONE assumed shape ("task from/at stores") — an assumption, not observed fact (user called this out 2026-07-05).
