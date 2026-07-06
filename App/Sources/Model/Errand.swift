@@ -9,6 +9,8 @@ struct CachedCandidate: Codable, Hashable {
     var name: String
     var lat: Double
     var lon: Double
+    // Optional so rows cached before addresses existed keep decoding.
+    var address: String?
 }
 
 @Model

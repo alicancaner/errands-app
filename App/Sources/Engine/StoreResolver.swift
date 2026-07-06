@@ -35,7 +35,8 @@ enum StoreResolver {
                     CachedCandidate(
                         name: item.name ?? phrase,
                         lat: item.placemark.coordinate.latitude,
-                        lon: item.placemark.coordinate.longitude
+                        lon: item.placemark.coordinate.longitude,
+                        address: item.placemark.title
                     )
                 }
             } catch {
