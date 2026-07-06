@@ -6,7 +6,12 @@ struct ContentView: View {
             ErrandListView()
                 .navigationTitle("Errands")
                 .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
+                    ToolbarItemGroup(placement: .topBarTrailing) {
+                        NavigationLink {
+                            SavedPlacesView()
+                        } label: {
+                            Image(systemName: "bookmark")
+                        }
                         NavigationLink {
                             DiagnosticsView()
                         } label: {
