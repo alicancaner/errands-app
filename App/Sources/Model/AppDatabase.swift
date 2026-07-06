@@ -6,7 +6,7 @@ import SwiftData
 enum AppDatabase {
     static let container: ModelContainer = {
         do {
-            return try ModelContainer(for: Errand.self, StorePreference.self)
+            return try ModelContainer(for: Errand.self, StorePreference.self, SavedPlace.self)
         } catch {
             fatalError("Could not create SwiftData container: \(error)")
         }

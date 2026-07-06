@@ -20,6 +20,9 @@ final class Errand {
 
     // Resolved-branch cache; empty until StoreResolver (Task 2.5) fills it.
     var candidates: [CachedCandidate]
+    // Places the user pinned by hand. VALUE COPIES, kept apart from the
+    // disposable cache so re-resolves can never wash a pin away.
+    var pinned: [CachedCandidate]
     var candidatesExpireAt: Date?
     // Where the cache was resolved. Re-resolve after moving > 10 km away.
     var cacheAnchorLat: Double?
@@ -38,6 +41,7 @@ final class Errand {
         self.title = title
         self.storePhrases = storePhrases
         self.candidates = []
+        self.pinned = []
         self.notifiedAt = [:]
         self.createdAt = createdAt
     }

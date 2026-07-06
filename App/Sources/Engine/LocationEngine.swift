@@ -19,6 +19,9 @@ final class LocationEngine: NSObject, ObservableObject {
     /// Rolling event log (persisted) — surfaced by the Diagnostics screen.
     @Published private(set) var events: [String] = []
 
+    /// Last fix we saw — drives the "850 m away" labels on branch cards.
+    @Published private(set) var lastKnownLocation: CLLocation?
+
     private let manager = CLLocationManager()
     private let motion = CMMotionActivityManager()
     private var container: ModelContainer?
@@ -37,6 +40,7 @@ final class LocationEngine: NSObject, ObservableObject {
     /// Called once at launch. Starts the cheap always-on wake source.
     func configure(container: ModelContainer) {
         self.container = container
+        lastKnownLocation = manager.location
         manager.startMonitoringSignificantLocationChanges()
         log("Engine started (significant-location-change monitoring on)")
         requestReplan()
@@ -46,6 +50,23 @@ final class LocationEngine: NSObject, ObservableObject {
     /// Call after any errand change (add / complete / delete).
     func requestReplan() {
         manager.requestLocation()
+    }
+
+    // MARK: - Effective branches
+
+    /// candidates (auto) + pinned (manual) + nickname-matched saved places,
+    /// deduped by storeKey. Pins and saved places are immune to cache refreshes.
+    static func effectiveBranches(for errand: Errand, savedPlaces: [SavedPlace]) -> [CachedCandidate] {
+        var seen = Set<StoreID>()
+        var result: [CachedCandidate] = []
+        let matched = savedPlaces.filter { place in
+            errand.storePhrases.contains { SavedPlaceMatcher.matches(nickname: place.nickname, phrase: $0) }
+        }.map(\.asCandidate)
+        for candidate in errand.pinned + matched + errand.candidates {
+            let key = storeKey(for: candidate)
+            if seen.insert(key).inserted { result.append(candidate) }
+        }
+        return result
     }
 
     // MARK: - Replanning
@@ -67,10 +88,12 @@ final class LocationEngine: NSObject, ObservableObject {
 
         await refreshStaleCaches(of: open, at: position, context: context)
 
+        let savedPlaces = (try? context.fetch(FetchDescriptor<SavedPlace>())) ?? []
+
         // Unique store branches across all open errands.
         var byID: [StoreID: StoreCandidate] = [:]
         for errand in open {
-            for candidate in errand.candidates {
+            for candidate in Self.effectiveBranches(for: errand, savedPlaces: savedPlaces) {
                 let id = Self.storeKey(for: candidate)
                 byID[id] = StoreCandidate(
                     id: id, point: GeoPoint(lat: candidate.lat, lon: candidate.lon)
@@ -172,8 +195,11 @@ final class LocationEngine: NSObject, ObservableObject {
             FetchDescriptor<StorePreference>(predicate: #Predicate { $0.storeKey == storeID })
         ))?.first
 
+        let savedPlaces = (try? context.fetch(FetchDescriptor<SavedPlace>())) ?? []
+
         var needsReplan = false
-        for errand in open where errand.candidates.contains(where: { Self.storeKey(for: $0) == storeID }) {
+        for errand in open where Self.effectiveBranches(for: errand, savedPlaces: savedPlaces)
+            .contains(where: { Self.storeKey(for: $0) == storeID }) {
             let decision = NotificationPolicy.decide(
                 ring: ring,
                 isDriving: isDriving,
@@ -306,6 +332,7 @@ extension LocationEngine {
 extension LocationEngine: CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
+        DispatchQueue.main.async { self.lastKnownLocation = location }
         log("Wake at \(String(format: "%.4f, %.4f", location.coordinate.latitude, location.coordinate.longitude))")
         Task { @MainActor in
             await self.replan(around: location)
