@@ -6,7 +6,7 @@ Task log for the Errands app (todo-geo-app). Plan: `docs/plans/2026-07-04-todo-g
 
 - [ ] Milestone 2: Phase 1 product — all build tasks done and user-verified; GATE G bench test (docs/GATE-G-BENCH.md), GATE H field week, GATE I pending whenever user can field-test
 - [ ] Milestone 2.5 (added 2026-07-05): Task 2.8 manual location control — BUILD DONE 2026-07-05 (Tasks 2.8.1–2.8.5); 📱 USER: run docs/TEST-2.8-LOCATIONS.md → GATE J (excluded rings stay gone across replans; toggles survive relaunch; re-include restores rings)
-- [ ] Milestone 2.6 (added 2026-07-05, from Gate J user feedback): Task 2.9 location control v2 — design approved (docs/plans/2026-07-05-location-ui-v2-design.md), plan written (Tasks 2.9.1–2.9.6, Gate K). AWAITING USER GO before build.
+- [ ] Milestone 2.6 (added 2026-07-05, from Gate J user feedback): Task 2.9 location control v2 — BUILD DONE 2026-07-05 (Tasks 2.9.1–2.9.6); 📱 USER: run docs/TEST-2.9-PLACES.md → GATE K (addresses+distances identify branches; pin↔card selection both ways; pinned place survives replans+relaunch; new voice errand mentioning the nickname auto-attaches; deleting the saved place stops future attaching only)
 - [x] 2026-07-05 — 📱 USER: sideloaded Task 2.5 build and ran docs/TEST-2.4-LIST.md — everything worked correctly (parse, complete/undo/delete, persistence across relaunch).
 
 ## Upcoming (from plan)
@@ -14,6 +14,12 @@ Task log for the Errands app (todo-geo-app). Plan: `docs/plans/2026-07-04-todo-g
 
 ## Completed
 
+- [x] 2026-07-05 — Task 2.9.1: SavedPlaceMatcher (TDD, 7 tests red→green): whole-word case-insensitive nickname matching, words <3 letters never anchor ("vet" matches "his vet", never "velvet"). ErrandKit suite now 52 tests.
+- [x] 2026-07-05 — Task 2.9.2: CachedCandidate gains optional `address` (old cached rows keep decoding, address appears after next re-resolve); StoreResolver captures placemark.title.
+- [x] 2026-07-05 — Task 2.9.3: SavedPlace @Model (global place book, in shared container); Errand.pinned value copies (immune to cache refresh); LocationEngine.effectiveBranches(for:savedPlaces:) = pinned + nickname-matched + auto, deduped by storeKey, used by replan AND handleEntry; @Published lastKnownLocation for distance labels. CI green (run 28760736843).
+- [x] 2026-07-05 — Task 2.9.4: ErrandDetailView v2: cards show address + distance ("850 m"/"2.3 km"), sorted nearest-first; Map(selection:) pin↔card selection both directions (tap pin → scroll+highlight card, tap card → highlight pin); orange = pinned, blue = auto, gray = excluded; pinned branches get pin badge + Unpin action instead of Exclude; "Add a location" toolbar button.
+- [x] 2026-07-05 — Task 2.9.5: AddLocationSheet (search by real name → tap result → nickname prompt → pins to errand + saves to place book + replans; empty nickname falls back to place name) + SavedPlacesView (bookmark icon left of wrench: rename via tap, swipe delete = stops future auto-attaching only). CI green (run 28760850259); .ipa strings verified (AddLocationSheet, SavedPlacesView, "No places found", "What do you call this place"; "Saved places" is a ≤15-byte small string, invisible as expected), copied to project root.
+- [x] 2026-07-05 — Task 2.9.6: docs/TEST-2.9-PLACES.md written (Gate K script: addresses/distances → pin↔card → pin Furfur's real vet → pin survives replans+relaunch → "buy treats from his vet" auto-attaches → rename/delete in place book).
 - [x] 2026-07-05 — Task 2.8.1: RegionPlanner `excluding:` param (TDD, 3 tests red→green): excluded stores never planted (outer OR inner), slots go to next-best; default arg keeps all call sites compiling.
 - [x] 2026-07-05 — Task 2.8.2: NotificationPolicy `remindWhenDriving`/`remindWhenWalking` params (TDD, 4 tests red→green): per-mode suppress after completed/cooldown checks, before ring logic; walking-off also skips inner planting; toggles independent. ErrandKit suite now 45 tests.
 - [x] 2026-07-05 — Task 2.8.3: StorePreference @Model (storeKey "lat,lon|name", global per branch) in shared container; LocationEngine.storeKey(for:) made internal; replan passes excluded set to planner; handleEntry passes the branch's toggles to policy. CI green (run 28758512073).
