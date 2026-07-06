@@ -416,6 +416,234 @@ Write `docs/TEST-2.8-LOCATIONS.md` (PROBE style): sideload → open an errand �
 
 ---
 
+## Milestone 2.6 — Location control v2: "know your places" (Task 2.9, added 2026-07-05)
+
+*From user feedback during the Gate J test. Design: `docs/plans/2026-07-05-location-ui-v2-design.md` (user-approved). Two problems: (1) matched branches are indistinguishable — no address/distance, pins not linked to cards; (2) wrong matches ("his vet in Yaletown" → two wrong vets) can't be corrected. Fix: show address + distance per branch with pin↔card selection; add search-and-pin backed by a global place book (`SavedPlace` with nicknames) whose nicknames auto-attach to future errands. Pins coexist with auto-matches; wrong guesses use the existing exclude. Pure Phase-1 UI/data work — no gate evidence needed to start; runs independently of Gates G–J.*
+
+*Executor notes: swipe-file style/conventions from Tasks 2.8.x just above. `swift test` runs from `ErrandKit/`; app-side code compiles only on CI (SourceKit "No such module" on Windows is noise). CI: push to main → `gh run list --commit <sha> --json databaseId` (poll a few seconds) → `gh run watch <id> --exit-status`. Verify each .ipa's strings before copying to root; strings ≤15 UTF-8 bytes are register-packed and invisible to string search — verify with type names (`AddLocationSheet`, `SavedPlacesView`) and longer literals.*
+
+### Task 2.9.1: SavedPlaceMatcher (TDD in ErrandKit)
+
+**Files:**
+- Create: `ErrandKit/Sources/ErrandKit/SavedPlaceMatcher.swift`
+- Create: `ErrandKit/Tests/ErrandKitTests/SavedPlaceMatcherTests.swift`
+
+**Contract:** `SavedPlaceMatcher.matches(nickname:phrase:)` — true when any *significant word* (≥ 3 letters, so "Furfur's" → "furfur" but the stray "s" is ignored) of the nickname appears as a **whole word** in the phrase, case-insensitive. Whole-word means "vet" never matches inside "velvet". Tokenize by splitting on everything non-alphanumeric.
+
+**Step 1 — Write the failing tests (complete file):**
+
+```swift
+import XCTest
+@testable import ErrandKit
+
+final class SavedPlaceMatcherTests: XCTestCase {
+
+    // Expected use — the Furfur's vet scenario from the design doc
+    func testNicknameWordInPhraseMatches() {
+        XCTAssertTrue(SavedPlaceMatcher.matches(
+            nickname: "Furfur's vet", phrase: "his vet in yaletown"
+        ))
+    }
+
+    func testWholeWordOnlyVetDoesNotMatchVelvet() {
+        XCTAssertFalse(SavedPlaceMatcher.matches(
+            nickname: "Furfur's vet", phrase: "buy velvet gloves"
+        ))
+    }
+
+    func testCaseInsensitive() {
+        XCTAssertTrue(SavedPlaceMatcher.matches(
+            nickname: "ADIDAS Robson", phrase: "adidas"
+        ))
+    }
+
+    func testShortNoiseWordsIgnored() {
+        // "s" (from Furfur's) and "in" must never be match anchors.
+        XCTAssertFalse(SavedPlaceMatcher.matches(
+            nickname: "Furfur's vet", phrase: "s in the park"
+        ))
+    }
+
+    func testMultiWordNicknameAnyWordMatches() {
+        XCTAssertTrue(SavedPlaceMatcher.matches(
+            nickname: "Yaletown Animal Hospital", phrase: "the animal hospital"
+        ))
+    }
+
+    // Edge / failure cases
+    func testEmptyPhraseNeverMatches() {
+        XCTAssertFalse(SavedPlaceMatcher.matches(nickname: "Furfur's vet", phrase: ""))
+    }
+
+    func testNicknameWithNoSignificantWordsNeverMatches() {
+        XCTAssertFalse(SavedPlaceMatcher.matches(nickname: "a b", phrase: "a b c"))
+    }
+}
+```
+
+**Step 2 — Run: `swift test` from `ErrandKit/`. Expected: compile FAILURE (`cannot find 'SavedPlaceMatcher'`) — that is the red state.**
+
+**Step 3 — Minimal implementation (complete file):**
+
+```swift
+import Foundation
+
+/// Decides whether a saved place's nickname is mentioned by a store phrase —
+/// the "place book pays off" rule: any significant word of the nickname
+/// appearing as a whole word in the phrase counts as a mention.
+public enum SavedPlaceMatcher {
+
+    /// Words shorter than this never anchor a match ("s", "in", "a").
+    static let minWordLength = 3
+
+    /// True when `phrase` mentions `nickname` (whole-word, case-insensitive).
+    public static func matches(nickname: String, phrase: String) -> Bool {
+        let nicknameWords = significantWords(of: nickname)
+        guard !nicknameWords.isEmpty else { return false }
+        let phraseWords = Set(significantWords(of: phrase))
+        return nicknameWords.contains { phraseWords.contains($0) }
+    }
+
+    /// Lowercased alphanumeric words of length >= minWordLength.
+    static func significantWords(of text: String) -> [String] {
+        text.lowercased()
+            .components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .filter { $0.count >= minWordLength }
+    }
+}
+```
+
+**Step 4 — Run: `swift test`. Expected: all suites PASS (52 tests total = 45 + 7).**
+
+**Step 5 — Commit:** `feat: saved-place nickname matcher`
+
+### Task 2.9.2: Candidate addresses
+
+**Files:**
+- Modify: `App/Sources/Model/Errand.swift` — `CachedCandidate` gains `var address: String?`
+- Modify: `App/Sources/Engine/StoreResolver.swift` — capture `item.placemark.title` (the human-readable one-line address) into `address:` when building each `CachedCandidate`
+
+`address` is optional, so previously cached rows keep decoding (they show no address until their next re-resolve — expected, documented in the user test).
+
+**Verification:** app-side only — compiles on CI (bundled into Task 2.9.3's push).
+**Commit:** `feat: cache branch street addresses`
+
+### Task 2.9.3: SavedPlace model, Errand.pinned, engine union
+
+**Files:**
+- Create: `App/Sources/Model/SavedPlace.swift`
+- Modify: `App/Sources/Model/AppDatabase.swift` — schema gains `SavedPlace.self`
+- Modify: `App/Sources/Model/Errand.swift` — new stored property `var pinned: [CachedCandidate]`, initialized `[]` in `init`
+- Modify: `App/Sources/Engine/LocationEngine.swift`
+
+**SavedPlace (complete):**
+
+```swift
+import Foundation
+import SwiftData
+
+/// One place the user taught the app ("Furfur's vet"). Global place book:
+/// future errands whose store phrase mentions the nickname attach it
+/// automatically. Deleting a SavedPlace stops future attaching only — value
+/// copies already pinned onto errands survive.
+@Model
+final class SavedPlace {
+    var nickname: String
+    var name: String
+    var address: String?
+    var lat: Double
+    var lon: Double
+    var createdAt: Date
+
+    init(nickname: String, name: String, address: String?, lat: Double, lon: Double) {
+        self.nickname = nickname
+        self.name = name
+        self.address = address
+        self.lat = lat
+        self.lon = lon
+        self.createdAt = .now
+    }
+
+    var asCandidate: CachedCandidate {
+        CachedCandidate(name: name, lat: lat, lon: lon, address: address)
+    }
+}
+```
+
+**LocationEngine changes (all thin, decisions stay in ErrandKit):**
+- New internal helper used by BOTH `replan` and `handleEntry` and later the detail view — the single definition of "which branches count for this errand":
+
+```swift
+/// candidates (auto) + pinned (manual) + nickname-matched saved places,
+/// deduped by storeKey. Pins and saved places are immune to cache refreshes.
+static func effectiveBranches(for errand: Errand, savedPlaces: [SavedPlace]) -> [CachedCandidate] {
+    var seen = Set<StoreID>()
+    var result: [CachedCandidate] = []
+    let matched = savedPlaces.filter { place in
+        errand.storePhrases.contains { SavedPlaceMatcher.matches(nickname: place.nickname, phrase: $0) }
+    }.map(\.asCandidate)
+    for candidate in errand.pinned + matched + errand.candidates {
+        let key = storeKey(for: candidate)
+        if seen.insert(key).inserted { result.append(candidate) }
+    }
+    return result
+}
+```
+
+- `replan`: fetch all `SavedPlace` once; build `byID` from `effectiveBranches(for:savedPlaces:)` instead of `errand.candidates`.
+- `handleEntry`: fetch all `SavedPlace` once; the errand-matches-store test becomes `effectiveBranches(for: errand, savedPlaces: savedPlaces).contains { Self.storeKey(for: $0) == storeID }`.
+- New published state for the distance labels: `@Published private(set) var lastKnownLocation: CLLocation?` — set from `manager.location` in `configure(container:)` and updated at the top of `didUpdateLocations`.
+
+**Verification:** `swift test` still green locally; push → CI green (this push carries 2.9.2 + 2.9.3).
+**Commit:** `feat: saved places and pinned branches in engine`
+
+### Task 2.9.4: ErrandDetailView v2 — addresses, distances, pin↔card selection
+
+**Files:**
+- Modify: `App/Sources/Views/ErrandDetailView.swift`
+
+**Behavior (complete spec):**
+- Branch list becomes `effectiveBranches` (auto + pinned + place-book), **sorted nearest-first** by distance from `engine.lastKnownLocation` (unsorted at the end when location unknown).
+- Each card: name (headline) + address (caption, when known) + distance ("850 m" below 1 km, else "2.3 km") + the existing three toggles. Pinned/place-book branches get a `pin.fill` badge next to the name and an **Unpin** swipe/context action instead of Exclude (unpin = remove the value copy from `errand.pinned`, save, replan). Auto branches keep the Exclude quick action.
+- **Pin↔card selection:** `@State private var selectedKey: StoreID?`; the map becomes `Map(selection: $selectedKey)` with each `Marker` `.tag(storeKey)`; wrap the List content in `ScrollViewReader`; `.onChange(of: selectedKey)` → `withAnimation { proxy.scrollTo(selectedKey) }`; each card `.id(storeKey)` + subtle background highlight when selected; tapping a card sets `selectedKey` (which also highlights its pin).
+- Marker tint: gray excluded, orange pinned/place-book, blue auto.
+- Toolbar button **"Add a location"** (`plus.magnifyingglass`) presents the Task 2.9.5 sheet.
+
+**Verification:** compiles on CI (bundled into Task 2.9.5's push).
+**Commit:** `feat: branch cards with address, distance, linked map selection`
+
+### Task 2.9.5: AddLocationSheet + SavedPlacesView
+
+**Files:**
+- Create: `App/Sources/Views/AddLocationSheet.swift`
+- Create: `App/Sources/Views/SavedPlacesView.swift`
+- Modify: `App/Sources/ContentView.swift` — bookmark toolbar icon (left of the wrench) → `SavedPlacesView`
+
+**AddLocationSheet (complete spec):**
+- Search `TextField` ("Name of the place, e.g. Yaletown Animal Hospital") with `.onSubmit` → one `MKLocalSearch` (reuse the 20 km-region pattern from `StoreResolver.resolve`, but inline — this is UI code, results are NOT cached).
+- Result rows: name + address + distance from `engine.lastKnownLocation`; tapping one shows a nickname alert (`TextField` pre-filled with the place name, prompt "What do you call this place? e.g. Furfur's vet").
+- Confirm → (1) append the value copy to `errand.pinned`, (2) insert a `SavedPlace`, (3) `try? context.save()`, (4) `LocationEngine.shared.requestReplan()`, (5) dismiss. Empty nickname → fall back to the place name.
+- States: idle hint text, "Searching…" progress, "No places found — try the exact name" empty state.
+
+**SavedPlacesView (complete spec):**
+- `@Query(sort: \SavedPlace.nickname)` list: nickname (headline), name + address (caption).
+- Swipe delete (footer explains: stops future auto-attaching; already-pinned errands keep it). Tap → rename-nickname alert. Renaming or deleting → save + `requestReplan()`.
+- Empty state: "No saved places yet. Pin one from any errand's Add a location."
+
+**Verification:** push → CI green → download .ipa → verify strings (`AddLocationSheet`, `SavedPlacesView`, `SavedPlace`, "No places found") → copy `Errands.ipa` to project root.
+**Commit:** `feat: search-and-pin sheet and saved places screen`
+
+### Task 2.9.6: Hand-off to user
+
+Write `docs/TEST-2.9-PLACES.md` (PROBE style, tap-by-tap): sideload → open the jersey errand → cards show addresses + distances, nearest first → tap a map pin, watch its card highlight/scroll → open the Furfur errand → Add a location → search the vet's real name → pin it, nickname "Furfur's vet" → wrong vets excluded via the existing quick action → Replan now in Diagnostics → pinned ring present, wrong-vet rings gone → force-quit + relaunch → pin still there → add a fresh errand "buy treats from his vet" by voice → the saved place attaches by itself (this is the payoff moment) → Saved places screen: rename, delete. Update `TASK.md`.
+
+**Commit:** `docs: Gate K user test script`
+
+> ### 🚦 GATE K — Place book verified on-phone
+> **Evidence (user confirmation):** addresses + distances identify branches; pin↔card selection works both directions; a pinned place survives replans and relaunch; a NEW voice errand mentioning the nickname auto-attaches the saved place; deleting the saved place stops future attaching without touching existing pins.
+
+---
+
 ## Milestone 3 — Phase 2: drive-mode look-ahead (plan later, deliberately)
 
 Per DESIGN.md §8, Phase 2 (temporary drive-mode coarse tracking, 5–8 km corridor projection, optional MKDirections road-distance check, "heads-up" notification tier) is **not planned in detail here on purpose**: its parameters (corridor width/length, wake cadence, anti-spam rules) should be tuned with real Phase 1 field data. After GATE H/I pass, write `docs/plans/<date>-phase2-lookahead.md` with the same gate discipline.

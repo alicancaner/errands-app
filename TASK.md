@@ -6,6 +6,7 @@ Task log for the Errands app (todo-geo-app). Plan: `docs/plans/2026-07-04-todo-g
 
 - [ ] Milestone 2: Phase 1 product — all build tasks done and user-verified; GATE G bench test (docs/GATE-G-BENCH.md), GATE H field week, GATE I pending whenever user can field-test
 - [ ] Milestone 2.5 (added 2026-07-05): Task 2.8 manual location control — BUILD DONE 2026-07-05 (Tasks 2.8.1–2.8.5); 📱 USER: run docs/TEST-2.8-LOCATIONS.md → GATE J (excluded rings stay gone across replans; toggles survive relaunch; re-include restores rings)
+- [ ] Milestone 2.6 (added 2026-07-05, from Gate J user feedback): Task 2.9 location control v2 — design approved (docs/plans/2026-07-05-location-ui-v2-design.md), plan written (Tasks 2.9.1–2.9.6, Gate K). AWAITING USER GO before build.
 - [x] 2026-07-05 — 📱 USER: sideloaded Task 2.5 build and ran docs/TEST-2.4-LIST.md — everything worked correctly (parse, complete/undo/delete, persistence across relaunch).
 
 ## Upcoming (from plan)
